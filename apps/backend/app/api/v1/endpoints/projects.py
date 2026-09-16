@@ -14,9 +14,9 @@ router = APIRouter(prefix="/projects", tags=["projects"])
 def list_published_projects(
     profile_id: uuid.UUID | None = Query(default=None),
     is_featured: bool | None = Query(default=None),
-    skill: str | None = Query(default=None),
-    category: str | None = Query(default=None),
-    tag: str | None = Query(default=None),
+    skill: str | None = Query(default=None, min_length=1),
+    category: str | None = Query(default=None, min_length=1),
+    tag: str | None = Query(default=None, min_length=1),
     db: Session = Depends(get_db),
 ) -> list[ProjectResponse]:
     projects = ProjectService(db).list_published(
@@ -26,6 +26,15 @@ def list_published_projects(
         category=category,
         tag=tag,
     )
+    return [ProjectResponse.model_validate(project) for project in projects]
+
+
+@router.get("/featured", response_model=list[ProjectResponse])
+def list_published_featured_projects(
+    profile_id: uuid.UUID | None = Query(default=None),
+    db: Session = Depends(get_db),
+) -> list[ProjectResponse]:
+    projects = ProjectService(db).list_published_featured(profile_id=profile_id)
     return [ProjectResponse.model_validate(project) for project in projects]
 
 

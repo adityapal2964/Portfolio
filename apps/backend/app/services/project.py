@@ -22,6 +22,13 @@ class ProjectService:
         require_published_profile(self.profiles, profile_id=project.profile_id)
         return project
 
+    def get_published_by_profile_slug(self, profile_id: uuid.UUID, slug: str) -> Project:
+        require_published_profile(self.profiles, profile_id=profile_id)
+        project = self.projects.get_by_profile_id_and_slug(profile_id, slug)
+        if project is None or project.status != PUBLISHED:
+            raise NotFoundError("Project not found")
+        return project
+
     def list_published(
         self,
         *,
@@ -36,6 +43,7 @@ class ProjectService:
         return self.projects.list(
             profile_id=profile_id,
             status=ContentStatus.PUBLISHED.value,
+            profile_status=PUBLISHED,
             is_featured=is_featured,
             skill_slug=skill,
             category_slug=category,

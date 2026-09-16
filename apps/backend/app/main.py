@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.v1.router import api_router
 from app.core.config import settings
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import InvalidStateError, NotFoundError
 
 
 def create_app() -> FastAPI:
@@ -13,6 +13,10 @@ def create_app() -> FastAPI:
     @application.exception_handler(NotFoundError)
     async def not_found_handler(_request: Request, exc: NotFoundError) -> JSONResponse:
         return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+    @application.exception_handler(InvalidStateError)
+    async def invalid_state_handler(_request: Request, exc: InvalidStateError) -> JSONResponse:
+        return JSONResponse(status_code=409, content={"detail": str(exc)})
 
     return application
 

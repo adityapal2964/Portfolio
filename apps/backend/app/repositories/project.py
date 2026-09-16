@@ -4,6 +4,7 @@ from sqlalchemy import Select, exists, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.category import Category
+from app.models.profile import Profile
 from app.models.project import Project
 from app.models.project_category import ProjectCategory
 from app.models.project_skill import ProjectSkill
@@ -20,11 +21,19 @@ class ProjectRepository:
         stmt = self._base_select().where(Project.id == project_id)
         return self.session.scalars(stmt).first()
 
+    def get_by_profile_id_and_slug(self, profile_id: uuid.UUID, slug: str) -> Project | None:
+        stmt = self._base_select().where(
+            Project.profile_id == profile_id,
+            Project.slug == slug,
+        )
+        return self.session.scalars(stmt).first()
+
     def list(
         self,
         *,
         profile_id: uuid.UUID | None = None,
         status: str | None = None,
+        profile_status: str | None = None,
         is_featured: bool | None = None,
         skill_slug: str | None = None,
         category_slug: str | None = None,
@@ -35,6 +44,17 @@ class ProjectRepository:
             stmt = stmt.where(Project.profile_id == profile_id)
         if status is not None:
             stmt = stmt.where(Project.status == status)
+        if profile_status is not None:
+            stmt = stmt.where(
+                exists(
+                    select(1)
+                    .select_from(Profile)
+                    .where(
+                        Profile.id == Project.profile_id,
+                        Profile.status == profile_status,
+                    )
+                )
+            )
         if is_featured is not None:
             stmt = stmt.where(Project.is_featured == is_featured)
         if skill_slug is not None:
